@@ -1,104 +1,67 @@
-package transfer;
+package Transfer;
 
-import java.io.*;
-import java.net.*;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
-
-public class FileTransferServer {
-
-    private static final int PORT = 12345; // Port number for the server
-    private JTextArea logArea;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+// File receiver server
+public class FileReceiverServer {
+    private static final int PORT = 12345;
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(FileTransferServer::new);
-    }
+        ArrayList<MyFile> receivedFiles = new ArrayList<>();
 
-    public FileTransferServer() {
-        JFrame frame = new JFrame("File Transfer Server");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(500, 400);
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            System.out.println("Server started and waiting for files...");
 
-        logArea = new JTextArea();
-        logArea.setEditable(false);
-        JScrollPane scrollPane = new JScrollPane(logArea);
+            while (true) {
+                try (Socket clientSocket = serverSocket.accept();
+                     DataInputStream dis = new DataInputStream(clientSocket.getInputStream())) {
 
-        frame.add(scrollPane, BorderLayout.CENTER);
+                    String fileName = dis.readUTF();
+                    int fileLength = dis.readInt();
+                    byte[] fileBytes = new byte[fileLength];
+                    dis.readFully(fileBytes);
 
-        JButton startButton = new JButton("Start Server");
-        startButton.addActionListener(e -> startServer());
-        frame.add(startButton, BorderLayout.SOUTH);
+                    MyFile receivedFile = new MyFile(receivedFiles.size(), fileName, fileBytes, getFileExtension(fileName));
+                    receivedFiles.add(receivedFile);
 
-        frame.setVisible(true);
-    }
-
-    private void startServer() {
-        appendLog("File Transfer Server started...");
-
-        new Thread(() -> {
-            try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-                while (true) {
-                    appendLog("Waiting for a connection...");
-                    Socket clientSocket = serverSocket.accept();
-                    appendLog("Client connected: " + clientSocket.getInetAddress());
-
-                    // Start a new thread for each client connection
-                    new Thread(new ClientHandler(clientSocket)).start();
-                }
-            } catch (IOException e) {
-                appendLog("Error starting the server: " + e.getMessage());
-                e.printStackTrace();
-            }
-        }).start();
-    }
-
-    private void appendLog(String message) {
-        SwingUtilities.invokeLater(() -> logArea.append(message + "\n"));
-    }
-
-    private class ClientHandler implements Runnable {
-        private final Socket clientSocket;
-
-        public ClientHandler(Socket clientSocket) {
-            this.clientSocket = clientSocket;
-        }
-
-        @Override
-        public void run() {
-            try (InputStream inputStream = clientSocket.getInputStream();
-                 DataInputStream dataInputStream = new DataInputStream(inputStream)) {
-
-                // Read the file name from the client
-                String fileName = dataInputStream.readUTF();
-                appendLog("Receiving file: " + fileName);
-
-                // Create a file output stream to save the received file
-                File outputFile = new File("received_" + fileName);
-                try (FileOutputStream fileOutputStream = new FileOutputStream(outputFile)) {
-                    byte[] buffer = new byte[4096];
-                    int bytesRead;
-
-                    // Read file data from the client and write to the output file
-                    while ((bytesRead = dataInputStream.read(buffer)) != -1) {
-                        fileOutputStream.write(buffer, 0, bytesRead);
-                    }
-
-                    appendLog("File received and saved as: " + outputFile.getAbsolutePath());
-                }
-
-            } catch (IOException e) {
-                System.err.println("Error handling client connection: " + e.getMessage());
-                e.printStackTrace();
-            } finally {
-                try {
-                    clientSocket.close();
-                    System.out.println("Client disconnected.");
-                } catch (IOException e) {
-                    System.err.println("Error closing client socket: " + e.getMessage());
+                    System.out.println("Received file: " + fileName);
+                    saveFile(fileName, fileBytes);
                 }
             }
+        } catch (IOException e) {
+            System.err.println("Error: " + e.getMessage());
         }
+    }
+
+    private static void saveFile(String fileName, byte[] fileBytes) throws IOException {
+        // Define the directory to save the files
+        File dir = new File("ReceivedFiles");
+
+        // Create the directory if it doesn't exist
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
+        // Create a file in the directory with the received file's name
+        File file = new File(dir, "received_" + fileName);
+
+        // Write the received bytes to the file
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(fileBytes);
+            System.out.println("File saved as: " + file.getAbsolutePath());
+        }
+    }
+
+
+    private static String getFileExtension(String fileName) {
+        int dotIndex = fileName.lastIndexOf('.');
+        return (dotIndex > 0) ? fileName.substring(dotIndex + 1) : "unknown";
     }
 }
 

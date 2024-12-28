@@ -1,7 +1,7 @@
-package transfer;
+package Transfer;
 
-public class MyFile {
-
+// A class representing a file to be transferred
+class MyFile {
     private int id;
     private String name;
     private byte[] data;
@@ -11,22 +11,6 @@ public class MyFile {
         this.id = id;
         this.name = name;
         this.data = data;
-        this.fileExtension = fileExtension;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setData(byte[] data) {
-        this.data = data;
-    }
-
-    public void setFileExtension(String fileExtension) {
         this.fileExtension = fileExtension;
     }
 
@@ -46,73 +30,3 @@ public class MyFile {
         return fileExtension;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
