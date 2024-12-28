@@ -1,4 +1,5 @@
 File Transfer Application
+
 This is a simple yet robust file transfer application that allows a client to send files to a server over a network. The server receives the file, organizes it into a designated directory, and ensures a smooth transfer process. The client interface is equipped with a graphical user interface (GUI) for easy file selection and transfer.
 
 Features
